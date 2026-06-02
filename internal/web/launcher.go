@@ -4,7 +4,6 @@ import (
 	"strconv"
 
 	"github.com/apicatcher/echo-service/internal/config"
-	"github.com/apicatcher/echo-service/internal/web/filter"
 	"github.com/apicatcher/echo-service/pkg/util"
 	"github.com/gin-gonic/gin"
 )
@@ -21,9 +20,7 @@ func init() {
 
 func Start() {
 	engine := gin.New()
-	middleware := []gin.HandlerFunc{
-		filter.AccessLogFilter(),
-	}
+	var middleware []gin.HandlerFunc
 	engine.Use(middleware...)
 	for _, opt := range opts {
 		opt(engine)
