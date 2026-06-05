@@ -75,10 +75,20 @@ func (api *aiChatAPI) chat(c *gin.Context) {
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
 	c.Writer.Header().Set("Transfer-Encoding", "chunked")
-	words := strings.Split(replyText, " ")
+	var chunks []string
+	lastIdx := 0
+	for i, r := range replyText {
+		if r == ',' || r == '.' {
+			chunks = append(chunks, replyText[lastIdx:i+1])
+			lastIdx = i + 1
+		}
+	}
+	if lastIdx < len(replyText) {
+		chunks = append(chunks, replyText[lastIdx:])
+	}
 	index := 0
 	c.Stream(func(w io.Writer) bool {
-		if index >= len(words) {
+		if index >= len(chunks) {
 			stopData := map[string]interface{}{
 				"id":      "apicatcher-mock-123",
 				"object":  "chat.completion.chunk",
@@ -97,10 +107,7 @@ func (api *aiChatAPI) chat(c *gin.Context) {
 			c.Writer.Write([]byte("data: [DONE]\n\n"))
 			return false
 		}
-		word := words[index]
-		if index > 0 {
-			word = " " + word
-		}
+		chunkStr := chunks[index]
 		chunkData := map[string]interface{}{
 			"id":      "apicatcher-mock-123",
 			"object":  "chat.completion.chunk",
@@ -110,7 +117,7 @@ func (api *aiChatAPI) chat(c *gin.Context) {
 				{
 					"index": 0,
 					"delta": map[string]interface{}{
-						"content": word,
+						"content": chunkStr,
 					},
 					"finish_reason": nil,
 				},
